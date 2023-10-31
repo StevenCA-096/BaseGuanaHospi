@@ -9,7 +9,6 @@ Nombre varchar (25) not null,
 Apellido1 varchar (25) not null,
 Apellido2 varchar (25) not null,
 Edad int not null,
-Fecha_Ingreso DateTime not null
 )
 go
 --Creacion de tabla Paciente_Unidad

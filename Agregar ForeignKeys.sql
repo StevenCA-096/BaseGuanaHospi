@@ -3,6 +3,7 @@ use Guana_HospiDB
 go
 
 --Agregar llaves foraneas a tabla Paciente_Unidad
+
 --Llave foranea con paciente
 alter table Paciente_Unidad
 Add constraint FK_PacienteUnidad_Paciente
@@ -28,7 +29,9 @@ Add constraint FK_Doctor_Especialidad
 FOREIGN KEY (Id_Especialidad)
 references Especialidad (ID_Especialidad)
 go
+
 --Agregar llaves foraneas a tabla Intervencion--
+
 --Agregar llave foranea de paciente con intervencion
 alter table Intervencion
 add constraint FK_Intervencion_Paciente
@@ -55,6 +58,7 @@ references TipoIntervencion (ID_TipoIntervencion)
 go
 ---
 --Agregar llaves foraneas a Enfermedad_Sintoma
+
 --agregar llave foranea de enfermedad_Sintoma con enfermedad
 alter table Enfermedad_Sintoma
 add constraint FK_EnfermedadSintoma_Enfermedad
