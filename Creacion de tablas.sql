@@ -92,6 +92,8 @@ go
 --Creacion de la tabla Rol
 create table Rol(
 ID_Rol int IDENTITY(1,1) PRIMARY KEY,
-Nombre varchar(25) not null
+NombreR varchar(25) not null
 )
 go
+
+exec sp_rename 'dbo.Rol.Nombre', 'NombreR', 'COLUMN';

@@ -9,8 +9,8 @@ create procedure SP_ObtenerEspecialidades
 as
 begin
     select
-        E.ID_Especialidad AS 'ID ESPECIALIDAD',
-        E.Nombre AS 'NOMBRE'
+        E.ID_Especialidad AS 'ID_ESPECIALIDAD',
+        E.NombreE AS 'NOMBREE'
     from Especialidad E;
 end
 go
@@ -22,7 +22,7 @@ create procedure SP_ObtenerSintomas
 as
 begin
     select
-        S.ID_Sintoma AS 'ID SÍNTOMA',
+        S.ID_Sintoma AS 'ID_SINTOMA',
         S.Nombre AS 'NOMBRE'
     from Sintoma S;
 end
@@ -35,7 +35,7 @@ create procedure SP_ObtenerEnfermedades
 as
 begin
     select
-        E.ID_Enfermedad AS 'ID ENFERMEDAD',
+        E.ID_Enfermedad AS 'ID_ENFERMEDAD',
         E.Nombre AS 'NOMBRE'
     from Enfermedad E;
 end
@@ -48,7 +48,7 @@ create procedure SP_ObtenerEnfermedadSintoma
 as
 begin
     select
-        ES.ID_Enfermedad_Sintoma AS 'ID ENFERMEDAD-SÍNTOMA',
+        ES.ID_Enfermedad_Sintoma AS 'ID_ENFERMEDAD_SÍNTOMA',
         E.Nombre AS 'ENFERMEDAD',
         S.Nombre AS 'SÍNTOMA'
     from Enfermedad_Sintoma ES
@@ -64,11 +64,11 @@ create procedure SP_ObtenerPacientes
 as
 begin
     select
-        P.ID_Paciente AS 'ID PACIENTE',
+        P.ID_Paciente AS 'ID_PACIENTE',
         P.NumSeguro AS 'NUMERO DE SEGURO',
         P.Nombre AS 'NOMBRE',
-        P.Apellido1 AS 'PRIMER APELLIDO',
-        P.Apellido2 AS 'SEGUNDO APELLIDO',
+        P.Apellido1 AS 'APELLIDO1',
+        P.Apellido2 AS 'APELLIDO2',
         P.Edad AS 'EDAD'
     from Paciente P;
 end
@@ -81,12 +81,13 @@ create procedure SP_ObtenerDoctores
 as
 begin
     select
-        D.ID_Doctor AS 'ID DOCTOR',
+        D.ID_Doctor AS 'ID_DOCTOR',
         D.Codigo AS 'CODIGO',
-        D.Nombre AS 'NOMBRE',
-        D.Apellido1 AS 'PRIMER APELLIDO',
-        D.Apellido2 AS 'SEGUNDO APELLIDO',
-        E.Nombre AS 'ESPECIALIDAD'
+        D.NombreD AS 'NOMBRED',
+        D.Apellido1 AS 'APELLIDO1',
+        D.Apellido2 AS 'APELLIDO2',
+		e.ID_Especialidad,
+        E.NombreE AS 'NOMBREE'
     from Doctor D
     inner join Especialidad E on D.ID_Especialidad = E.ID_Especialidad;
 end
@@ -100,11 +101,12 @@ create procedure SP_ObtenerUnidad
 as
 begin
     select
-        U.ID_Unidad AS 'ID UNIDAD',
-        U.Codigo AS 'CODIGO',
+        U.ID_Unidad AS 'ID_UNIDAD',
+        U.Codigo AS 'Codigo',
         U.Nombre AS 'NOMBRE',
-        U.Planta AS 'PLANTA'
-    from Unidad U;
+        U.Planta AS 'PLANTA',
+		U.Id_Doctor as 'iD_Doctor'
+    from Unidad U
 end
 go
 
@@ -115,7 +117,7 @@ create procedure SP_ObtenerPacienteUnidad
 as
 begin
     select
-        PU.ID_Paciente_Unidad AS 'ID PACIENTE-UNIDAD',
+        PU.ID_Paciente_Unidad AS 'ID_PACIENTE_UNIDAD',
         P.NumSeguro AS 'NUMERO DE SEGURO',
         P.Nombre AS 'NOMBRE DEL PACIENTE',
         U.Nombre AS 'NOMBRE DE LA UNIDAD',
@@ -134,13 +136,13 @@ create procedure SP_ObtenerIntervenciones
 as
 begin
     select
-        I.ID_Intervencion AS 'ID INTERVENCION',
-        I.Fecha_Intervencion AS 'FECHA DE INTERVENCION',
+        I.ID_Intervencion AS 'ID_INTERVENCION',
+        I.Fecha_Intervencion,
         I.prescripcion AS 'PRESCRIPCION',
         TI.Nombre AS 'TIPO DE INTERVENCION',
         E.Nombre AS 'ENFERMEDAD',
         P.Nombre AS 'NOMBRE DEL PACIENTE',
-        D.Nombre AS 'NOMBRE DEL DOCTOR'
+        D.NombreD AS 'NOMBRE DEL DOCTOR'
     from Intervencion I
     inner join TipoIntervencion TI on I.Id_TipoIntervencion = TI.ID_TipoIntervencion
     inner join Enfermedad E on I.Id_Enfermedad = E.ID_Enfermedad
@@ -169,8 +171,8 @@ create procedure SP_ObtenerRoles
 as
 begin
     select
-        R.ID_Rol AS 'ID ROL',
-        R.Nombre AS 'NOMBRE'
+        R.ID_Rol AS 'ID_ROL',
+        R.Nombre AS 'NombreR'
     from Rol R;
 end
 go
@@ -182,10 +184,11 @@ create procedure SP_ObtenerUsuarios
 as
 begin
     select
-        U.ID_Usuario AS 'ID USUARIO',
+        U.ID_Usuario AS 'ID_USUARIO',
         U.Correo AS 'CORREO',
-        U.Contra AS 'CONTRASEÑA',
-        R.Nombre AS 'ROL'
+        U.Contra AS 'CONTRA',
+		R.ID_Rol,
+		R.NombreR
     from Usuario U
     inner join Rol R on U.ID_Rol = R.ID_Rol;
 end
