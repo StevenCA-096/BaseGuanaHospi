@@ -103,11 +103,18 @@ as
 begin
     select
         U.ID_Unidad AS 'ID_UNIDAD',
-        U.Codigo AS 'Codigo',
-        U.Nombre AS 'NOMBRE',
+        U.Codigo AS 'CodigoU',
+        U.Nombre AS 'NombreU',
         U.Planta AS 'PLANTA',
-		U.Id_Doctor as 'iD_Doctor'
-    from Unidad U
+		U.Id_Doctor as 'Id_Doctor',
+		
+		d.Codigo,
+		D.Nombre as 'NombreD',
+		D.Apellido1,
+		d.Apellido2,
+		d.ID_Especialidad
+    from Unidad U inner join Doctor D on
+	U.Id_Doctor = D.ID_Doctor
 end
 go
 
