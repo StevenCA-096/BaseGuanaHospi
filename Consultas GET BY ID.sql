@@ -125,12 +125,13 @@ end
 else if exists (select ID_Doctor from Doctor where ID_Doctor = @ID_Doctor)
 begin
     select
-        D.ID_Doctor AS 'ID DOCTOR',
+        D.ID_Doctor AS 'ID_DOCTOR',
         D.Codigo AS 'CODIGO',
-        D.Nombre AS 'NOMBRE',
-        D.Apellido1 AS 'PRIMER APELLIDO',
-        D.Apellido2 AS 'SEGUNDO APELLIDO',
-        E.Nombre AS 'ESPECIALIDAD'
+        D.Nombre AS 'NOMBRED',
+        D.Apellido1 AS 'APELLIDO1',
+        D.Apellido2 AS 'APELLIDO2',
+		E.ID_Especialidad,
+        E.Nombre AS 'NOMBREE'
     from Doctor D
     inner join Especialidad E on D.ID_Especialidad = E.ID_Especialidad
     where D.ID_Doctor = @ID_Doctor;
@@ -164,11 +165,11 @@ end
 else if exists (select ID_Paciente from Paciente where ID_Paciente = @ID_Paciente)
 begin
     select
-        P.ID_Paciente AS 'ID PACIENTE',
-        P.NumSeguro AS 'NUMERO DE SEGURO',
+        P.ID_Paciente AS 'ID_PACIENTE',
+        P.NumSeguro AS 'NUMSEGURO',
         P.Nombre AS 'NOMBRE',
-        P.Apellido1 AS 'PRIMER APELLIDO',
-        P.Apellido2 AS 'SEGUNDO APELLIDO',
+        P.Apellido1 AS 'APELLIDO1',
+        P.Apellido2 AS 'APELLIDO2',
         P.Edad AS 'EDAD'
     from Paciente P
     where P.ID_Paciente = @ID_Paciente;
