@@ -356,7 +356,7 @@ else if exists (select ID_Rol from Rol where ID_Rol = @ID_Rol)
 begin
     select
         R.ID_Rol AS 'ID ROL',
-        R.Nombre AS 'NOMBRE'
+        R.NombreR AS 'NOMBRE'
     from Rol R
     where R.ID_Rol = @ID_Rol;
 end
@@ -392,7 +392,7 @@ begin
         U.ID_Usuario AS 'ID USUARIO',
         U.Correo AS 'CORREO',
         U.Contra AS 'CONTRASEÑA',
-        R.Nombre AS 'ROL'
+        R.NombreR AS 'ROL'
     from Usuario U
     inner join Rol R on U.ID_Rol = R.ID_Rol
     where U.ID_Usuario = @ID_Usuario;

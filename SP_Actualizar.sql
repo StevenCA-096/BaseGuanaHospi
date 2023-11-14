@@ -224,7 +224,7 @@ begin
     begin
         begin tran
         update Rol
-        set Nombre = @Nombre 
+        set NombreR = @Nombre 
         where ID_Rol = @IdRol
         commit tran
         print 'Se actualizó el Rol con el ID indicado'

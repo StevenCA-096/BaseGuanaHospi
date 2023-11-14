@@ -403,7 +403,7 @@ begin
     begin
         print 'El nombre del rol contiene caracteres inválidos'
     end
-    else if not exists (select Nombre from Rol where Nombre = @Nombre)
+    else if not exists (select NombreR from Rol where NombreR = @Nombre)
     begin
         begin tran
         insert into Rol values(@Nombre)

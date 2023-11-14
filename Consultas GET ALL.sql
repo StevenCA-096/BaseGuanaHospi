@@ -10,7 +10,7 @@ as
 begin
     select
         E.ID_Especialidad AS 'ID_ESPECIALIDAD',
-        E.NombreE AS 'NOMBREE'
+        E.Nombre AS 'NOMBREE'
     from Especialidad E;
 end
 go
@@ -65,7 +65,7 @@ as
 begin
     select
         P.ID_Paciente AS 'ID_PACIENTE',
-        P.NumSeguro AS 'NUMERO DE SEGURO',
+        P.NumSeguro AS 'NumSeguro',
         P.Nombre AS 'NOMBRE',
         P.Apellido1 AS 'APELLIDO1',
         P.Apellido2 AS 'APELLIDO2',
@@ -83,17 +83,18 @@ begin
     select
         D.ID_Doctor AS 'ID_DOCTOR',
         D.Codigo AS 'CODIGO',
-        D.NombreD AS 'NOMBRED',
+        D.Nombre AS 'NOMBRED',
         D.Apellido1 AS 'APELLIDO1',
         D.Apellido2 AS 'APELLIDO2',
-		e.ID_Especialidad,
-        E.NombreE AS 'NOMBREE'
+		
+		e.ID_Especialidad as 'ID_Especialidad',
+        E.Nombre AS 'Nombre'
     from Doctor D
     inner join Especialidad E on D.ID_Especialidad = E.ID_Especialidad;
 end
 go
 
-
+exec SP_ObtenerDoctores
 -- Obtener Unidades
 drop procedure if exists SP_ObtenerUnidad;
 go
@@ -139,10 +140,10 @@ begin
         I.ID_Intervencion AS 'ID_INTERVENCION',
         I.Fecha_Intervencion,
         I.prescripcion AS 'PRESCRIPCION',
-        TI.Nombre AS 'TIPO DE INTERVENCION',
-        E.Nombre AS 'ENFERMEDAD',
-        P.Nombre AS 'NOMBRE DEL PACIENTE',
-        D.NombreD AS 'NOMBRE DEL DOCTOR'
+        TI.Nombre AS 'NombreTI',
+        E.Nombre AS 'NombreE',
+        concat(P.Nombre,' ',P.Apellido1) AS 'NombreP',
+        concat(D.Nombre,' ',D.Apellido1) AS 'NombreD'
     from Intervencion I
     inner join TipoIntervencion TI on I.Id_TipoIntervencion = TI.ID_TipoIntervencion
     inner join Enfermedad E on I.Id_Enfermedad = E.ID_Enfermedad
@@ -158,7 +159,7 @@ create procedure SP_ObtenerTipoIntervencion
 as
 begin
     select
-        TI.ID_TipoIntervencion AS 'ID TIPO DE INTERVENCION',
+        TI.ID_TipoIntervencion AS 'ID_TIPOINTERVENCION',
         TI.Nombre AS 'NOMBRE'
     from TipoIntervencion TI;
 end
@@ -172,7 +173,7 @@ as
 begin
     select
         R.ID_Rol AS 'ID_ROL',
-        R.Nombre AS 'NombreR'
+        R.NombreR AS 'NombreR'
     from Rol R;
 end
 go
