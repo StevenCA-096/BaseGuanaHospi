@@ -69,7 +69,7 @@ begin
     declare @ID_Doctor int
     declare @Correo_Usuario varchar(60)
     select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Doctor = ID_Doctor from deleted 
+    select @ID_Doctor = ID_Doctor from deleted
     select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
 
     insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
@@ -421,7 +421,7 @@ begin
     declare @Correo_Usuario varchar(60)
 
     select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Paciente = ID_Paciente from inserted 
+    select @ID_Paciente = ID_Paciente from deleted 
     select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
 
     insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)

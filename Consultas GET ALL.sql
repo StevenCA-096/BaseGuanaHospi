@@ -106,15 +106,9 @@ begin
         U.Codigo AS 'CodigoU',
         U.Nombre AS 'NombreU',
         U.Planta AS 'PLANTA',
-		U.Id_Doctor as 'Id_Doctor',
+		u.Id_Doctor as 'doctor_id'
 		
-		d.Codigo,
-		D.Nombre as 'NombreD',
-		D.Apellido1,
-		d.Apellido2,
-		d.ID_Especialidad
-    from Unidad U inner join Doctor D on
-	U.Id_Doctor = D.ID_Doctor
+    from Unidad U 
 end
 go
 
@@ -126,11 +120,13 @@ as
 begin
     select
         PU.ID_Paciente_Unidad AS 'ID_PACIENTE_UNIDAD',
+		p.ID_Paciente AS 'Id_Paciente',
         P.NumSeguro AS 'NUMERO DE SEGURO',
         P.Nombre AS 'NOMBRE DEL PACIENTE',
+		U.ID_Unidad AS 'Id_Unidad',
         U.Nombre AS 'NOMBRE DE LA UNIDAD',
-        PU.Fecha_Ingreso AS 'FECHA DE INGRESO',
-        PU.Fecha_Salida AS 'FECHA DE SALIDA'
+        PU.Fecha_Ingreso AS 'FECHA_INGRESO',
+        PU.Fecha_Salida AS 'FECHA_SALIDA'
     from Paciente_Unidad PU
     inner join Paciente P on PU.Id_Paciente = P.ID_Paciente
     inner join Unidad U on PU.Id_Unidad = U.ID_Unidad;

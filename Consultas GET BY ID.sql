@@ -140,7 +140,16 @@ end
 else
 
 begin
-	print 'El Doctor no existe'
+	select top(0)
+        D.ID_Doctor AS 'ID_DOCTOR',
+        D.Codigo AS 'CODIGO',
+        D.Nombre AS 'NOMBRED',
+        D.Apellido1 AS 'APELLIDO1',
+        D.Apellido2 AS 'APELLIDO2',
+		E.ID_Especialidad,
+        E.Nombre AS 'NOMBREE'
+    from Doctor D inner join Especialidad E on D.ID_Especialidad = E.ID_Especialidad
+    where D.ID_Doctor = @ID_Doctor;
 end
 go
 
