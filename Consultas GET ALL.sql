@@ -106,7 +106,7 @@ begin
         U.Codigo AS 'CodigoU',
         U.Nombre AS 'NombreU',
         U.Planta AS 'PLANTA',
-		u.Id_Doctor as 'doctor_id'
+		u.Id_Doctor as 'doctor_id'	
 		
     from Unidad U 
 end
@@ -121,10 +121,10 @@ begin
     select
         PU.ID_Paciente_Unidad AS 'ID_PACIENTE_UNIDAD',
 		p.ID_Paciente AS 'Id_Paciente',
-        P.NumSeguro AS 'NUMERO DE SEGURO',
-        P.Nombre AS 'NOMBRE DEL PACIENTE',
+        P.NumSeguro AS 'NUMSEGURO',
+        concat(P.Nombre,' ',P.Apellido1) AS 'NOMBRE_PACIENTE',
 		U.ID_Unidad AS 'Id_Unidad',
-        U.Nombre AS 'NOMBRE DE LA UNIDAD',
+        U.Nombre AS 'NOMBRE_UNIDAD',
         PU.Fecha_Ingreso AS 'FECHA_INGRESO',
         PU.Fecha_Salida AS 'FECHA_SALIDA'
     from Paciente_Unidad PU
