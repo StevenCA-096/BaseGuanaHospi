@@ -293,8 +293,7 @@ begin
 			 PATINDEX('%[a-zA-Z]%', CAST(@IdUnidad AS varchar(25))) > 0 or
 			 PATINDEX('%[a-zA-Z]%', CAST(@IdDoctor AS varchar(25))) > 0 or
 			 PATINDEX('%[a-zA-Z]%', CAST(@Codigo AS varchar(25))) > 0 or
-			 PATINDEX('%[a-zA-Z]%', CAST(@Planta AS varchar(25))) > 0 or
-			 PATINDEX('%[^a-zA-Z]%', @Nombre) > 0 )	
+			 PATINDEX('%[a-zA-Z]%', CAST(@Planta AS varchar(25))) > 0)
     begin
         print 'Los datos a ingresar contienen carácteres inválidos'
     end
@@ -318,7 +317,8 @@ begin
     end
 end
 go
-
+EXEC sp_set_session_context 'user_id', 2
+exec sp_ActualizarUnidad 11,2121,'Unidad as',2,2
 -- Actualizar Paciente
 drop procedure if exists SP_ActualizarPaciente
 go
