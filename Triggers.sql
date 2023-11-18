@@ -1,14 +1,3 @@
---Contexto para conocer a los usuarios
-drop procedure if exists SP_Contexto
-go
-create procedure SP_Contexto (@IdUsuario decimal(18, 0)) as
-begin
-declare @contextInfo varbinary(128);
-set @contextInfo = cast(@IdUsuario AS varbinary(128));
-set CONTEXT_INFO @contextInfo;
-end
-go
-
 --Triggers para registro de acciones
 
 use Guana_HospiDB
@@ -17,867 +6,747 @@ go
 --Creacion de tabla para guardar datos de triggers
 drop table if exists HistorialAcciones
 go
-create table HistorialAcciones
-(
-ID_Accion int IDENTITY(1,1) PRIMARY KEY,
-ID_Usuario int not null,
-ID_Registro int not null,
-Fecha datetime not null,
-Descripcion varchar(300) not null
-)
-go
+CREATE TABLE HistorialAcciones (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Fecha DATETIME,
+	IdUsuario INT,
+    CorreoUsuario VARCHAR(50),
+    Accion VARCHAR(50),
+    IdRegistroModificado INT,
+);
 
 --Llave foranea con usuario
 alter table HistorialAcciones
 Add constraint FK_HistorialAcciones_Usuario
-FOREIGN KEY (ID_Usuario)
+FOREIGN KEY (IdUsuario)
 references Usuario (ID_Usuario)
 go
 
 --Triggers de Doctor
 
 --Trigger al insertar un doctor
-drop trigger if exists TR_InsertarDoctor
-go
-create trigger TR_InsertarDoctor 
-on Doctor after insert
-as
-begin
-        declare @ID_Usuario int
-        declare @ID_Doctor int
-		declare @Correo_Usuario varchar(60)
-        select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));  
-        select @ID_Doctor = ID_Doctor from inserted
-		select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+DROP TRIGGER IF EXISTS TR_InsertarDoctor;
+GO
+CREATE TRIGGER TR_InsertarDoctor 
+ON Doctor AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Doctor INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-        insert into HistorialAcciones(ID_Usuario,ID_Registro,Fecha,Descripcion)
-        values (@ID_Usuario, @ID_Doctor, getdate(), 
-		'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN DOCTOR.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Doctor as varchar) + 
-		'. FECHA ACCIÓN: ' + Convert(varchar(40),getdate())
-        )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Doctor = ID_Doctor FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar un doctor
-drop trigger if exists TR_ActualizarDoctor
-go
-create trigger TR_ActualizarDoctor 
-on Doctor after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Doctor int
-    declare @Correo_Usuario varchar(60)
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Doctor = ID_Doctor from deleted
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN DOCTOR', @ID_Doctor);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Doctor, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN DOCTOR.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Doctor as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al actualizar un Doctor
+DROP TRIGGER IF EXISTS TR_ActualizarDoctor;
+GO
+CREATE TRIGGER TR_ActualizarDoctor 
+ON Doctor AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Doctor INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al eliminar un doctor
-drop trigger if exists TR_EliminarDoctor
-go
-create trigger TR_EliminarDoctor 
-on Doctor after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Doctor int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Doctor = ID_Doctor FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Doctor = ID_Doctor from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN DOCTOR', @ID_Doctor);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Doctor, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN DOCTOR.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Doctor as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al eliminar un Doctor
+DROP TRIGGER IF EXISTS TR_EliminarDoctor;
+GO
+CREATE TRIGGER TR_EliminarDoctor 
+ON Doctor AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Doctor INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Triggers de Enfermedad
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Doctor = ID_Doctor FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al insertar una Enfermedad
-drop trigger if exists TR_InsertarEnfermedad
-go
-create trigger TR_InsertarEnfermedad
-on Enfermedad after insert
-as
-begin
-        declare @ID_Usuario int
-        declare @ID_Enfermedad int
-		declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN DOCTOR', @ID_Doctor);
+END;
+GO
 
-        select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-        select @ID_Enfermedad = ID_Enfermedad from inserted
-		select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Triggers de Enfermedad
 
-        insert into HistorialAcciones(ID_Usuario,ID_Registro,Fecha,Descripcion)
-        values (@ID_Usuario, @ID_Enfermedad, getdate(), 
-		'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN ENFERMEDAD.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Enfermedad as varchar) + 
-		'. FECHA ACCIÓN: ' + Convert(varchar(40),getdate())
-        )
-end
-go
+-- Trigger al insertar una Enfermedad
+DROP TRIGGER IF EXISTS TR_InsertarEnfermedad;
+GO
+CREATE TRIGGER TR_InsertarEnfermedad
+ON Enfermedad AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Enfermedad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al actualizar una Enfermedad
-drop trigger if exists TR_ActualizarEnfermedad
-go
-create trigger TR_ActualizarEnfermedad 
-on Enfermedad after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Enfermedad int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Enfermedad = ID_Enfermedad FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Enfermedad = ID_Enfermedad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN ENFERMEDAD', @ID_Enfermedad);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Enfermedad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN ENFERMEDAD.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Enfermedad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al actualizar una Enfermedad
+DROP TRIGGER IF EXISTS TR_ActualizarEnfermedad;
+GO
+CREATE TRIGGER TR_ActualizarEnfermedad 
+ON Enfermedad AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Enfermedad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al eliminar una Enfermedad
-drop trigger if exists TR_EliminarEnfermedad
-go
-create trigger TR_EliminarEnfermedad 
-on Enfermedad after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Enfermedad int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Enfermedad = ID_Enfermedad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Enfermedad = ID_Enfermedad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN ENFERMEDAD', @ID_Enfermedad);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Enfermedad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN ENFERMEDAD.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Enfermedad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al eliminar una Enfermedad
+DROP TRIGGER IF EXISTS TR_EliminarEnfermedad;
+GO
+CREATE TRIGGER TR_EliminarEnfermedad 
+ON Enfermedad AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Enfermedad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Triggers de Sintoma
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Enfermedad = ID_Enfermedad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al insertar un Sintoma
-drop trigger if exists TR_InsertarSintoma
-go
-create trigger TR_InsertarSintoma
-on Sintoma after insert
-as
-begin
-        declare @ID_Usuario int
-        declare @ID_Sintoma int
-		declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN ENFERMEDAD', @ID_Enfermedad);
+END;
+GO
 
-        select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-        select @ID_Sintoma = ID_Sintoma from inserted
-		select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Triggers de Sintoma
 
-        insert into HistorialAcciones(ID_Usuario,ID_Registro,Fecha,Descripcion)
-        values (@ID_Usuario, @ID_Sintoma, getdate(), 
-		'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN SÍNTOMA.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Sintoma as varchar) + 
-		'. FECHA ACCIÓN: ' + Convert(varchar(40),getdate())
-        )
-end
-go
+-- Trigger al insertar un Síntoma
+DROP TRIGGER IF EXISTS TR_InsertarSintoma;
+GO
+CREATE TRIGGER TR_InsertarSintoma
+ON Sintoma AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Sintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al actualizar una Sintoma
-drop trigger if exists TR_ActualizarSintoma
-go
-create trigger TR_ActualizarSintoma 
-on Sintoma after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Sintoma int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Sintoma = ID_Sintoma FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Sintoma = ID_Sintoma from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN SÍNTOMA', @ID_Sintoma);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Sintoma, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN SÍNTOMA.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Sintoma as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al actualizar un Sintoma
+DROP TRIGGER IF EXISTS TR_ActualizarSintoma;
+GO
+CREATE TRIGGER TR_ActualizarSintoma 
+ON Sintoma AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Sintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al eliminar una Sintoma
-drop trigger if exists TR_EliminarSintoma
-go
-create trigger TR_EliminarSintoma
-on Sintoma after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Sintoma int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Sintoma = ID_Sintoma FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Sintoma = ID_Sintoma from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN SÍNTOMA', @ID_Sintoma);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Sintoma, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN SÍNTOMA.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Sintoma as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al eliminar un Sintoma
+DROP TRIGGER IF EXISTS TR_EliminarSintoma;
+GO
+CREATE TRIGGER TR_EliminarSintoma
+ON Sintoma AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Sintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Triggers de Especialidad
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Sintoma = ID_Sintoma FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al insertar una Especialidad
-drop trigger if exists TR_InsertarEspecialidad
-go
-create trigger TR_InsertarEspecialidad
-on Especialidad after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Especialidad int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN SÍNTOMA', @ID_Sintoma);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Especialidad = ID_Especialidad from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Triggers de Especialidad
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Especialidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN ESPECIALIDAD.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Especialidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al insertar una Especialidad
+DROP TRIGGER IF EXISTS TR_InsertarEspecialidad;
+GO
+CREATE TRIGGER TR_InsertarEspecialidad
+ON Especialidad AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Especialidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al actualizar una Especialidad
-drop trigger if exists TR_ActualizarEspecialidad
-go
-create trigger TR_ActualizarEspecialidad
-on Especialidad after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Especialidad int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Especialidad = ID_Especialidad FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Especialidad = ID_Especialidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN ESPECIALIDAD', @ID_Especialidad);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Especialidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN ESPECIALIDAD.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Especialidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al actualizar una Especialidad
+DROP TRIGGER IF EXISTS TR_ActualizarEspecialidad;
+GO
+CREATE TRIGGER TR_ActualizarEspecialidad 
+ON Especialidad AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Especialidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al eliminar una Especialidad
-drop trigger if exists TR_EliminarEspecialidad
-go
-create trigger TR_EliminarEspecialidad
-on Especialidad after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Especialidad int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Especialidad = ID_Especialidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Especialidad = ID_Especialidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN ESPECIALIDAD', @ID_Especialidad);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Especialidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN ESPECIALIDAD.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Especialidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al eliminar una Especialidad
+DROP TRIGGER IF EXISTS TR_EliminarEspecialidad;
+GO
+CREATE TRIGGER TR_EliminarEspecialidad
+ON Especialidad AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Especialidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Triggers de Intervencion
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Especialidad = ID_Especialidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al insertar una Intervencion
-drop trigger if exists TR_InsertarIntervencion
-go
-create trigger TR_InsertarIntervencion
-on Intervencion after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Intervencion int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+	VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACION EN ESPECIALIDAD', @ID_Especialidad);
+END;
+GO
+-- Triggers de	Paciente
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Intervencion = ID_Intervencion from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Intervencion, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN INTERVENCIÓN.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Intervencion as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go	
+-- Trigger al insertar un Paciente
+DROP TRIGGER IF EXISTS TR_InsertarPaciente;
+GO
+CREATE TRIGGER TR_InsertarPaciente
+ON Paciente AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Paciente INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al actualizar una Intervencion
-drop trigger if exists TR_ActualizarIntervencion
-go
-create trigger TR_ActualizarIntervencion
-on Intervencion after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Intervencion int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Paciente = ID_Paciente FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Intervencion = ID_Intervencion from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN PACIENTE', @ID_Paciente);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Intervencion, getdate(),'ACTUALIZACION A INTERVENCION')
-end
-go
+-- Trigger al actualizar un Paciente
+DROP TRIGGER IF EXISTS TR_ActualizarPaciente;
+GO
+CREATE TRIGGER TR_ActualizarPaciente
+ON Paciente AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Paciente INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Trigger al eliminar una Intervencion
-drop trigger if exists TR_EliminarIntervencion
-go
-create trigger TR_EliminarIntervencion
-on Intervencion after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Intervencion int
-    declare @Correo_Usuario varchar(60)
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Paciente = ID_Paciente FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Intervencion = ID_Intervencion from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN PACIENTE', @ID_Paciente);
+END;
+GO
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Intervencion, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN INTERVENCIÓN.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Intervencion as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+-- Trigger al eliminar un Paciente
+DROP TRIGGER IF EXISTS TR_EliminarPaciente;
+GO
+CREATE TRIGGER TR_EliminarPaciente
+ON Paciente AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Paciente INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
---Triggers de Paciente
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Paciente = ID_Paciente FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al insertar un Paciente
-drop trigger if exists TR_InsertarPaciente
-go
-create trigger TR_InsertarPaciente
-on Paciente after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Paciente int
-    declare @Correo_Usuario varchar(60)
-
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Paciente = ID_Paciente from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
-
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Paciente, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN PACIENTE.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Paciente as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
-
---Trigger al actualizar un Paciente
-drop trigger if exists TR_ActualizarPaciente
-go
-create trigger TR_ActualizarPaciente
-on Paciente after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Paciente int
-    declare @Correo_Usuario varchar(60)
-
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Paciente = ID_Paciente from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
-
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Paciente, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN PACIENTE.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Paciente as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
-
---Trigger al eliminar un Paciente
-drop trigger if exists TR_EliminarPaciente
-go
-create trigger TR_EliminarPaciente
-on Paciente after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Paciente int
-    declare @Correo_Usuario varchar(60)
-
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Paciente = ID_Paciente from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
-
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Paciente, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN PACIENTE.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Paciente as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN PACIENTE', @ID_Paciente);
+END;
+GO
 
 --Triggers de Rol
 
---Trigger al insertar un Rol
-drop trigger if exists TR_InsertarRol
-go
-create trigger TR_InsertarRol
-on Rol after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Rol int
-    declare @Correo_Usuario varchar(60)
+-- Trigger al insertar un Rol
+DROP TRIGGER IF EXISTS TR_InsertarRol;
+GO
+CREATE TRIGGER TR_InsertarRol
+ON Rol AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Rol INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Rol = ID_Rol from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Rol = ID_Rol FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Rol, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN ROL.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Rol as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN ROL', @ID_Rol);
+END;
+GO
 
---Trigger al actualizar un Rol
-drop trigger if exists TR_ActualizarRol
-go
-create trigger TR_ActualizarRol
-on Rol after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Rol int
-    declare @Correo_Usuario varchar(60)
+-- Trigger al actualizar un Rol
+DROP TRIGGER IF EXISTS TR_ActualizarRol;
+GO
+CREATE TRIGGER TR_ActualizarRol
+ON Rol AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Rol INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Rol = ID_Rol from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Rol = ID_Rol FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Rol, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN ROL.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Rol as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN ROL', @ID_Rol);
+END;
+GO
 
---Trigger al eliminar un Rol
-drop trigger if exists TR_EliminarRol
-go
-create trigger TR_EliminarRol
-on Rol after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Rol int
-    declare @Correo_Usuario varchar(60)
+-- Trigger al eliminar un Rol
+DROP TRIGGER IF EXISTS TR_EliminarRol;
+GO
+CREATE TRIGGER TR_EliminarRol
+ON Rol AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Rol INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Rol = ID_Rol from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Rol = ID_Rol FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Rol, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN ROL.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Rol as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN ROL', @ID_Rol);
+END;
+GO
 
 --Triggers de TipoIntervencion
 
---Trigger al insertar un TipoIntervencion
-drop trigger if exists TR_InsertarTipoIntervencion
-go
-create trigger TR_InsertarTipoIntervencion
-on TipoIntervencion after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_TipoIntervencion int
-    declare @Correo_Usuario varchar(60)
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_TipoIntervencion = ID_TipoIntervencion from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al insertar un TipoIntervencion
+DROP TRIGGER IF EXISTS TR_InsertarTipoIntervencion;
+GO
+CREATE TRIGGER TR_InsertarTipoIntervencion
+ON TipoIntervencion AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_TipoIntervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_TipoIntervencion, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN TIPO INTERVENCIÓN.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_TipoIntervencion as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_TipoIntervencion = ID_TipoIntervencion FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar un TipoIntervencion
-drop trigger if exists TR_ActualizarTipoIntervencion
-go
-create trigger TR_ActualizarTipoIntervencion
-on TipoIntervencion after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_TipoIntervencion int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN TIPO INTERVENCIÓN', @ID_TipoIntervencion);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_TipoIntervencion = ID_TipoIntervencion from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al actualizar un TipoIntervencion
+DROP TRIGGER IF EXISTS TR_ActualizarTipoIntervencion;
+GO
+CREATE TRIGGER TR_ActualizarTipoIntervencion
+ON TipoIntervencion AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_TipoIntervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_TipoIntervencion, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN TIPO INTERVENCIÓN.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_TipoIntervencion as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_TipoIntervencion = ID_TipoIntervencion FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al eliminar un TipoIntervencion
-drop trigger if exists TR_EliminarTipoIntervencion
-go
-create trigger TR_EliminarTipoIntervencion
-on TipoIntervencion after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_TipoIntervencion int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN TIPO INTERVENCIÓN', @ID_TipoIntervencion);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_TipoIntervencion = ID_TipoIntervencion from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al eliminar un TipoIntervencion
+DROP TRIGGER IF EXISTS TR_EliminarTipoIntervencion;
+GO
+CREATE TRIGGER TR_EliminarTipoIntervencion
+ON TipoIntervencion AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_TipoIntervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_TipoIntervencion, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN TIPO INTERVENCIÓN.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_TipoIntervencion as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_TipoIntervencion = ID_TipoIntervencion FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN TIPO INTERVENCIÓN', @ID_TipoIntervencion);
+END;
+GO
 
 --Triggers de Unidad
 
---Trigger al insertar una Unidad
-drop trigger if exists TR_InsertarUnidad
-go
-create trigger TR_InsertarUnidad
-on Unidad after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Unidad int
-    declare @Correo_Usuario varchar(60)
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Unidad = ID_Unidad from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al insertar una Unidad
+DROP TRIGGER IF EXISTS TR_InsertarUnidad;
+GO
+CREATE TRIGGER TR_InsertarUnidad
+ON Unidad AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Unidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Unidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN UNIDAD.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_Unidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Unidad = ID_Unidad FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar una Unidad
-drop trigger if exists TR_ActualizarUnidad
-go
-create trigger TR_ActualizarUnidad
-on Unidad after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Unidad int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN UNIDAD', @ID_Unidad);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Unidad = ID_Unidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al actualizar una Unidad
+DROP TRIGGER IF EXISTS TR_ActualizarUnidad;
+GO
+CREATE TRIGGER TR_ActualizarUnidad
+ON Unidad AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Unidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Unidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN UNIDAD.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_Unidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Unidad = ID_Unidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al eliminar una Unidad
-drop trigger if exists TR_EliminarUnidad
-go
-create trigger TR_EliminarUnidad
-on Unidad after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_Unidad int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN UNIDAD', @ID_Unidad);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_Unidad = ID_Unidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al eliminar una Unidad
+DROP TRIGGER IF EXISTS TR_EliminarUnidad;
+GO
+CREATE TRIGGER TR_EliminarUnidad
+ON Unidad AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Unidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_Unidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN UNIDAD.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_Unidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Unidad = ID_Unidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN UNIDAD', @ID_Unidad);
+END;
+GO
 
 --Triggers de Usuario
 
---Trigger al insertar un Usuario
-drop trigger if exists TR_InsertarUsuario
-go
-create trigger TR_InsertarUsuario
-on Usuario after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_UsuarioRegistrado int
-    declare @Correo_Usuario varchar(60)
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_UsuarioRegistrado = ID_Usuario from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al insertar un Usuario
+DROP TRIGGER IF EXISTS TR_InsertarUsuario;
+GO
+CREATE TRIGGER TR_InsertarUsuario
+ON Usuario AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_UsuarioRegistrado INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_UsuarioRegistrado, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN USUARIO.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_UsuarioRegistrado as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_UsuarioRegistrado = ID_Usuario FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar un Usuario
-drop trigger if exists TR_ActualizarUsuario
-go
-create trigger TR_ActualizarUsuario
-on Usuario after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_UsuarioActualizado int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN USUARIO', @ID_UsuarioRegistrado);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_UsuarioActualizado = ID_Usuario from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al actualizar un Usuario
+DROP TRIGGER IF EXISTS TR_ActualizarUsuario;
+GO
+CREATE TRIGGER TR_ActualizarUsuario
+ON Usuario AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_UsuarioActualizado INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_UsuarioActualizado, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN USUARIO.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_UsuarioActualizado as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_UsuarioActualizado = ID_Usuario FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al eliminar un Usuario
-drop trigger if exists TR_EliminarUsuario
-go
-create trigger TR_EliminarUsuario
-on Usuario after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_UsuarioEliminado int
-    declare @Correo_Usuario varchar(60)
-
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_UsuarioEliminado = ID_Usuario from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
-
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_UsuarioEliminado, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN USUARIO.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_UsuarioEliminado as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN USUARIO', @ID_UsuarioActualizado);
+END
+GO
 
 --Triggers de PacienteUnidad
 
---Trigger al insertar un PacienteUnidad
-drop trigger if exists TR_InsertarPacienteUnidad
-go
-create trigger TR_InsertarPacienteUnidad
-on Paciente_Unidad after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_PacienteUnidad int
-    declare @Correo_Usuario varchar(60)
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_PacienteUnidad = ID_Paciente_Unidad from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al insertar un PacienteUnidad
+DROP TRIGGER IF EXISTS TR_InsertarPacienteUnidad;
+GO
+CREATE TRIGGER TR_InsertarPacienteUnidad
+ON Paciente_Unidad AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_PacienteUnidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_PacienteUnidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN PACIENTE_UNIDAD.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_PacienteUnidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_PacienteUnidad = ID_Paciente_Unidad FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar un PacienteUnidad
-drop trigger if exists TR_ActualizarPacienteUnidad
-go
-create trigger TR_ActualizarPacienteUnidad
-on Paciente_Unidad after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_PacienteUnidad int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN PACIENTE_UNIDAD', @ID_PacienteUnidad);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_PacienteUnidad = ID_Paciente_Unidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al actualizar un PacienteUnidad
+DROP TRIGGER IF EXISTS TR_ActualizarPacienteUnidad;
+GO
+CREATE TRIGGER TR_ActualizarPacienteUnidad
+ON Paciente_Unidad AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_PacienteUnidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_PacienteUnidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN PACIENTE_UNIDAD.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_PacienteUnidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_PacienteUnidad = ID_Paciente_Unidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al eliminar un PacienteUnidad
-drop trigger if exists TR_EliminarPacienteUnidad
-go
-create trigger TR_EliminarPacienteUnidad
-on Paciente_Unidad after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_PacienteUnidad int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN PACIENTE_UNIDAD', @ID_PacienteUnidad);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_PacienteUnidad = ID_Paciente_Unidad from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al eliminar un PacienteUnidad
+DROP TRIGGER IF EXISTS TR_EliminarPacienteUnidad;
+GO
+CREATE TRIGGER TR_EliminarPacienteUnidad
+ON Paciente_Unidad AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_PacienteUnidad INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_PacienteUnidad, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN PACIENTE_UNIDAD.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_PacienteUnidad as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_PacienteUnidad = ID_Paciente_Unidad FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN PACIENTE_UNIDAD', @ID_PacienteUnidad);
+END;
+GO
 
 --Triggers de EnfermedadSintoma
 
---Trigger al insertar un EnfermedadSintoma
-drop trigger if exists TR_InsertarEnfermedadSintoma
-go
-create trigger TR_InsertarEnfermedadSintoma
-on Enfermedad_Sintoma after insert
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_EnfermedadSintoma int
-    declare @Correo_Usuario varchar(60)
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma from inserted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al insertar un EnfermedadSintoma
+DROP TRIGGER IF EXISTS TR_InsertarEnfermedadSintoma;
+GO
+CREATE TRIGGER TR_InsertarEnfermedadSintoma
+ON Enfermedad_Sintoma AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_EnfermedadSintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_EnfermedadSintoma, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: INSERCIÓN EN ENFERMEDAD_SINTOMA.' + ' ID REGISTRO INSERTADO: ' + cast(@ID_EnfermedadSintoma as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al actualizar un EnfermedadSintoma
-drop trigger if exists TR_ActualizarEnfermedadSintoma
-go
-create trigger TR_ActualizarEnfermedadSintoma
-on Enfermedad_Sintoma after update
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_EnfermedadSintoma int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN ENFERMEDAD_SINTOMA', @ID_EnfermedadSintoma);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al actualizar un EnfermedadSintoma
+DROP TRIGGER IF EXISTS TR_ActualizarEnfermedadSintoma;
+GO
+CREATE TRIGGER TR_ActualizarEnfermedadSintoma
+ON Enfermedad_Sintoma AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_EnfermedadSintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_EnfermedadSintoma, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ACTUALIZACIÓN EN ENFERMEDAD_SINTOMA.' + ' ID REGISTRO ACTUALIZADO: ' + cast(@ID_EnfermedadSintoma as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
---Trigger al eliminar un EnfermedadSintoma
-drop trigger if exists TR_EliminarEnfermedadSintoma
-go
-create trigger TR_EliminarEnfermedadSintoma
-on Enfermedad_Sintoma after delete
-as
-begin
-    declare @ID_Usuario int
-    declare @ID_EnfermedadSintoma int
-    declare @Correo_Usuario varchar(60)
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN ENFERMEDAD_SINTOMA', @ID_EnfermedadSintoma);
+END;
+GO
 
-    select @ID_Usuario = convert(int,SESSION_CONTEXT(N'user_id'));
-    select @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma from deleted 
-    select @Correo_Usuario = Correo from Usuario where ID_Usuario = @ID_Usuario
+-- Trigger al eliminar un EnfermedadSintoma
+DROP TRIGGER IF EXISTS TR_EliminarEnfermedadSintoma;
+GO
+CREATE TRIGGER TR_EliminarEnfermedadSintoma
+ON Enfermedad_Sintoma AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_EnfermedadSintoma INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
 
-    insert into HistorialAcciones(ID_Usuario, ID_Registro, Fecha, Descripcion)
-    values (@ID_Usuario, @ID_EnfermedadSintoma, getdate(), 
-    'USUARIO: ' + @Correo_Usuario  + '. ACCIÓN: ELIMINACIÓN EN ENFERMEDAD_SINTOMA.' + ' ID REGISTRO ELIMINADO: ' + cast(@ID_EnfermedadSintoma as varchar) + 
-    '. FECHA ACCIÓN: ' + Convert(varchar(40), getdate())
-    )
-end
-go
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_EnfermedadSintoma = ID_Enfermedad_Sintoma FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
 
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN ENFERMEDAD_SINTOMA', @ID_EnfermedadSintoma);
+END;
+GO
+
+-- Triggers de Intervencion
+
+-- Trigger al insertar una Intervencion
+DROP TRIGGER IF EXISTS TR_InsertarIntervencion;
+GO
+CREATE TRIGGER TR_InsertarIntervencion
+ON Intervencion AFTER INSERT
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Intervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
+
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Intervencion = ID_Intervencion FROM inserted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'INSERCIÓN EN INTERVENCIÓN', @ID_Intervencion);
+END;
+GO
+
+-- Trigger al actualizar una Intervencion
+DROP TRIGGER IF EXISTS TR_ActualizarIntervencion;
+GO
+CREATE TRIGGER TR_ActualizarIntervencion
+ON Intervencion AFTER UPDATE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Intervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
+
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Intervencion = ID_Intervencion FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ACTUALIZACIÓN EN INTERVENCIÓN', @ID_Intervencion);
+END;
+GO
+
+-- Trigger al eliminar una Intervencion
+DROP TRIGGER IF EXISTS TR_EliminarIntervencion;
+GO
+CREATE TRIGGER TR_EliminarIntervencion
+ON Intervencion AFTER DELETE
+AS
+BEGIN
+    DECLARE @ID_Usuario INT;
+    DECLARE @ID_Intervencion INT;
+    DECLARE @Correo_Usuario VARCHAR(60);
+
+    SELECT @ID_Usuario = CONVERT(INT, SESSION_CONTEXT(N'user_id'));
+    SELECT @ID_Intervencion = ID_Intervencion FROM deleted;
+    SELECT @Correo_Usuario = Correo FROM Usuario WHERE ID_Usuario = @ID_Usuario;
+
+    INSERT INTO HistorialAcciones (Fecha, IdUsuario, CorreoUsuario, Accion, IdRegistroModificado)
+    VALUES (GETDATE(), @ID_Usuario, @Correo_Usuario, 'ELIMINACIÓN EN INTERVENCIÓN', @ID_Intervencion);
+END;
+GO
